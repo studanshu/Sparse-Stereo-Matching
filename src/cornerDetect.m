@@ -58,7 +58,7 @@ ind = sortIndex(1:nCorners);
 corners = [r1 c1];
 
 figure(1), imshow(imgFil), hold on
-plot(c1, r1, 'o', 'MarkerSize', 10, 'linewidth',2), title('corners detected');
+plot(c1, r1, 'o', 'MarkerSize', 16, 'linewidth',2);
 
 % minEigenVector = reshape(minEigenVal,1,numel(minEigenVal));
 % [sortVal, sortIdx] = sort(minEigenVector(:), 'descend');

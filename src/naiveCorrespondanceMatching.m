@@ -10,3 +10,5 @@ function [I, corsSSD] = naiveCorrespondanceMatching(I1, I2, corners1, corners2, 
 % OUTPUTS
 %   I     - Final Image with correspondences
 %	corsSSD	- List of correspondences detected
+    
+end
