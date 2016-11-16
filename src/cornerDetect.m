@@ -1,4 +1,4 @@
-function corners = CornerDetect(Image, nCorners, smoothSTD, windowSize)
+function corners = cornerDetect(Image, nCorners, smoothSTD, windowSize)
 % INPUTS
 %   Image    - Image to detect corners
 %   nCorners    - number of corners to detect
@@ -28,54 +28,46 @@ sumIxy = conv2(Ixy, sumFilter, 'same');
 minEigenVal = zeros(size(imgFil));
 for x = 1:width
     for y = 1:height
-        Cxy = [[Ix2(x,y), Ixy(x,y)];[Ixy(x,y) Iy2(x,y)]];
+        Cxy = [[sumIx2(x,y), sumIxy(x,y)];[sumIxy(x,y) sumIy2(x,y)]];
         minEigenVal(x,y) = min(eig(Cxy));
     end
 end
 
-sz1 = size(imgFil);
-localmin = minEigenVal;
+tempMinEigenVal = zeros(size(imgFil));
+for x = 1:width
+    for y = 1:height
+        currentMax = minEigenVal(x,y);
+        for tempX = x - windowSize: x + windowSize
+            for tempY = y - windowSize: y + windowSize
+                if(tempX < 1 || tempX > width || tempY < 1 || tempY > height)
+                    continue;
+                end
+                currentMax = max(currentMax, minEigenVal(tempX,tempY));
+            end
+        end
+        if(minEigenVal(x,y) == currentMax)
+            tempMinEigenVal(x,y) = currentMax;
+        end
+    end
+end
 
-R = localmin(2:size(localmin,1)-1, 2:size(localmin,2)-1) > localmin(2:size(localmin,1)-1, 3:size(localmin,2));
-L = localmin(2:size(localmin,1)-1, 2:size(localmin,2)-1) > localmin(2:size(localmin,1)-1, 1:size(localmin,2)-2);
-U = localmin(2:size(localmin,1)-1, 2:size(localmin,2)-1) > localmin(1:size(localmin,1)-2, 2:size(localmin,2)-1);
-D = localmin(2:size(localmin,1)-1, 2:size(localmin,2)-1) > localmin(3:size(localmin,1), 2:size(localmin,2)-1);
-UR = localmin(2:size(localmin,1)-1, 2:size(localmin,2)-1) > localmin(1:size(localmin,1)-2, 3:size(localmin,2));
-DR = localmin(2:size(localmin,1)-1, 2:size(localmin,2)-1) > localmin(3:size(localmin,1), 3:size(localmin,2));
-UL = localmin(2:size(localmin,1)-1, 2:size(localmin,2)-1) > localmin(1:size(localmin,1)-2, 1:size(localmin,2)-2);
-DL = localmin(2:size(localmin,1)-1, 2:size(localmin,2)-1) > localmin(3:size(localmin,1), 1:size(localmin,2)-2);
-m = zeros(sz1);
-m(2:sz1(1,1)-1, 2:sz1(1,2)-1) = R .* L .* U .* D.* UR .* DR .* UL .* DL;
-localmin1 = m .* localmin; % local maxima
+minEigenVector = reshape(tempMinEigenVal,1,numel(minEigenVal));
+[sortVal, sortIdx] = sort(minEigenVector(:), 'descend');
+topNIndex = sortIdx(1:nCorners);
 
+r = [];
+c = [];
+topCorners = [];
+for i = 1:numel(topNIndex)
+    x = mod(topNIndex(i) - 1,height) + 1;
+    y = floor((topNIndex(i) - 1)/height) + 1;
+    r = [r;[x]];
+    c = [c;[y]];
+    topCorners = [topCorners;[x y]];
+end
 
-
-[sortedValues, sortIndex] = sort(localmin1(:), 'descend');
-ind = sortIndex(1:nCorners);
-
-[r1 c1] = ind2sub([size(localmin,1), size(localmin,2)], ind);
-
-corners = [r1 c1];
-
-figure(1), imshow(imgFil), hold on
-plot(c1, r1, 'o', 'MarkerSize', 16, 'linewidth',2);
-
-% minEigenVector = reshape(minEigenVal,1,numel(minEigenVal));
-% [sortVal, sortIdx] = sort(minEigenVector(:), 'descend');
-% topNIndex = sortIdx(1:nCorners);
-% 
-% r = [];
-% c = [];
-% topCorners = [];
-% for i = 1:numel(topNIndex)
-%     x = mod(topNIndex(i) - 1,height) + 1;
-%     y = floor((topNIndex(i) - 1)/height) + 1;
-%     r = [r;[x]];
-%     c = [c;[y]];
-%     topCorners = [topCorners;[x y]];
-% end
-% 
-% corners = topCorners;
-% figure(1), imshow(Image), hold on
-% plot(c, r, 'o', 'MarkerSize', 10, 'linewidth',2), title('corners detected');
+corners = topCorners;
+figure(1), imshow(Image), hold on
+plot(c, r, 'o', 'MarkerSize', 10, 'linewidth',2), 
+title('corners detected');
 end
